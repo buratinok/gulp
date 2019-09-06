@@ -15,6 +15,10 @@ const cssFiles = [
 const jsFiles = [
     './src/js/*.js'
 ]
+const imgFiles = [
+    './src/img/**/*'
+]
+
 
 //стили CSS
 function styles() {
@@ -37,9 +41,26 @@ function styles() {
         .pipe(gulp.dest('./build/css'))
 }
 
-//стили JS
+//срипты JS
 function scripts() {
 
+}
+
+//минификацыя img
+function imagesmin() {
+    return gulp.src(imgFiles)
+        .pipe($.imagemin({
+            verbose: true,
+            interlaced: true,
+            progressive: true,
+            optimizationLevel: 5,
+            svgoPlugins : [
+                {
+                    removeViewBox : true
+                }
+            ]
+        }))
+        .pipe(gulp.dest('./build/img'))
 }
 
 //очистка
@@ -62,6 +83,9 @@ gulp.task('styles', styles);
 
 //таска js
 gulp.task('scripts', scripts);
+
+//таска img
+gulp.task('imagesmin', imagesmin);
 
 //таска clean
 gulp.task('clean', clean);
