@@ -6,9 +6,14 @@ const autoprefixer = require('autoprefixer');
 const postcssPresetEnv = require('postcss-preset-env');
 const del = require('del');
 
-const $ = plugins();
 
-//scss.compiler = require('node-scss');
+const reload = browserSync.reload;
+const $ = plugins();
+$.sass.compiler = require('node-sass');
+
+const htmlFiles = [
+    '*.html'
+]
 
 const cssFiles = [
     './src/scss/**/*.scss'
@@ -40,6 +45,7 @@ function styles() {
         }))
         .pipe($.rename({suffix: '.min'}))
         .pipe(gulp.dest('./build/css'))
+        .pipe(browserSync.stream())
 }
 
 //срипты JS
@@ -52,11 +58,13 @@ function scripts() {
             //манипулирование именами переменных
             toplevel: true
         }))
+        .pipe($.rename({suffix: '.min'}))
         .pipe(gulp.dest('./build/js'))
+        .pipe(browserSync.stream())
 }
 
-//минификацыя img
-function imagesmin() {
+//обработка изображения
+function images() {
     return gulp.src(imgFiles)
         .pipe($.imagemin({
             verbose: true,
@@ -70,22 +78,30 @@ function imagesmin() {
             ]
         }))
         .pipe(gulp.dest('./build/img'))
+        .pipe(browserSync.stream())
 }
 
 //очистка
 function clean() {
     return del(['build/*'])
 }
-
-//наблюдение
-function watch() {
+//запуск сервера
+function server(done) {
     browserSync.init({
         server: {
             baseDir: "./"
         }
-    });
-    gulp.watch('./scss/**/*.scss', styles);
+    },done);
 }
+
+//наблюдение
+function watch() {
+    gulp.watch(cssFiles).on('all', gulp.series(styles, reload));
+    gulp.watch(jsFiles ).on('all', gulp.series(scripts, reload));
+    gulp.watch(imgFiles).on('all', gulp.series(images, reload));
+    gulp.watch(htmlFiles).on("change", reload);
+}
+
 
 //таска css
 gulp.task('styles', styles);
@@ -94,15 +110,18 @@ gulp.task('styles', styles);
 gulp.task('scripts', scripts);
 
 //таска img
-gulp.task('imagesmin', imagesmin);
+gulp.task('images', images);
 
 //таска clean
 gulp.task('clean', clean);
+
+//таск server
+gulp.task('server', server);
 
 //таск watch
 gulp.task('watch', watch);
 
 //таск build
-gulp.task('build', gulp.series(clean, gulp.parallel(styles, scripts)));
-gulp.task('dev', gulp.series('build', 'watch'))
+gulp.task('build', gulp.series(clean, gulp.parallel(styles, scripts, images)));
+gulp.task('dev', gulp.series('build', 'server', 'watch'))
 
