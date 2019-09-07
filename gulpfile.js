@@ -4,6 +4,7 @@ const browserSync = require('browser-sync').create();
 const plugins = require('gulp-load-plugins');
 const autoprefixer = require('autoprefixer');
 const postcssPresetEnv = require('postcss-preset-env');
+const del = require('del');
 
 const $ = plugins();
 
@@ -43,7 +44,15 @@ function styles() {
 
 //срипты JS
 function scripts() {
-
+    return gulp.src(jsFiles)
+        //merge
+        .pipe($.concat('script.js'))
+        //минификацыя
+        .pipe($.uglify({
+            //манипулирование именами переменных
+            toplevel: true
+        }))
+        .pipe(gulp.dest('./build/js'))
 }
 
 //минификацыя img
@@ -65,7 +74,7 @@ function imagesmin() {
 
 //очистка
 function clean() {
-
+    return del(['build/*'])
 }
 
 //наблюдение
