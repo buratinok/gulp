@@ -7,22 +7,35 @@ const postcssPresetEnv = require('postcss-preset-env');
 const del = require('del');
 const fs = require('fs');
 const yaml = require('js-yaml');
+const yargs = require('yargs')
+const named = require('vinyl-named')
+const webpackStream = require('webpack-stream');
+const webpack = require('webpack')
 
-
+//релоадер browserSync
 const reload = browserSync.reload;
+
+//плагины gulp подключение $
 const $ = plugins();
+
+//компилятор node-sass
 $.sass.compiler = require('node-sass');
+
+//подключение чтение config.yml
 const {COMPATIBILITY, PORT, PATHS} = loadConfig();
 
-function loadConfig(){
-    let ymlFile = fs.readFileSync('config.yml','utf8');
+function loadConfig() {
+    let ymlFile = fs.readFileSync('config.yml', 'utf8');
     return yaml.load(ymlFile);
 }
 
+//проверка флага --production
+const PRODUCTION = !!(yargs.argv.production)
+
+//подключение рабочих файлов
 const htmlFiles = [
     '*.html'
 ]
-
 const cssFiles = PATHS.styles;
 const jsFiles = PATHS.entrance;
 const imgFiles = PATHS.img;
@@ -31,7 +44,9 @@ const imgFiles = PATHS.img;
 //стили CSS
 function styles() {
     return gulp.src(cssFiles)
-        .pipe($.sass())
+        .pipe($.sourcemaps.init())
+        .pipe($.sass()
+            .on('error', $.sass.logError))
         .pipe($.base64Inline())
         .pipe($.concat('style.css'))
         .pipe($.postcss([
@@ -42,25 +57,49 @@ function styles() {
                 features: {'nesting-rules': true}
             })
         ]))
-        .pipe($.cleanCss({
-            level: 2
-        }))
-        .pipe($.rename({suffix: '.min'}))
+
+        .pipe($.if(PRODUCTION, $.cleanCss({ level: 2})))
+        .pipe($.if(!PRODUCTION, $.sourcemaps.write()))
+        //.pipe($.if(PRODUCTION, $.rename({suffix: '.min'})))
         .pipe(gulp.dest(PATHS.build + 'css'))
         .pipe(browserSync.stream())
 }
 
-//срипты JS
+//конфигурацыя webpack
+let webpackConfig = {
+    mode: (PRODUCTION ? 'production' : 'development'),
+    module: {
+        rules: [
+            {
+                test: /\.js$/,
+                exclude: /(node_modules)/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        presets: ["@babel/preset-env"],
+                        compact: false
+                    }
+
+                }
+            }
+        ]
+    },
+    devtool: !PRODUCTION && 'source-map'
+}
+
+//скрипты JS
 function scripts() {
     return gulp.src(jsFiles)
-        //merge
-        .pipe($.concat('app.js'))
-        //минификацыя
-        .pipe($.uglify({
-            //манипулирование именами переменных
-            toplevel: true
-        }))
-        .pipe($.rename({suffix: '.min'}))
+        .pipe(named())
+        .pipe($.sourcemaps.init())
+        .pipe(webpackStream(webpackConfig, webpack))
+        .pipe($.if(PRODUCTION, $.uglify({toplevel: true})
+                .on('error', e => {
+                    console.log();
+                })
+        ))
+        .pipe($.if(!PRODUCTION, $.sourcemaps.write()))
+        //.pipe($.if(PRODUCTION, $.rename({suffix: '.min'})))
         .pipe(gulp.dest(PATHS.build + 'js'))
         .pipe(browserSync.stream())
 }
@@ -73,9 +112,9 @@ function images() {
             interlaced: true,
             progressive: true,
             optimizationLevel: 5,
-            svgoPlugins : [
+            svgoPlugins: [
                 {
-                    removeViewBox : true
+                    removeViewBox: true
                 }
             ]
         }))
@@ -87,19 +126,20 @@ function images() {
 function clean() {
     return del(['build/*'])
 }
+
 //запуск сервера
 function server(done) {
     browserSync.init({
         server: {
             baseDir: PATHS.dist,
         }, port: PORT
-    },done);
+    }, done);
 }
 
 //наблюдение
 function watch() {
     gulp.watch(cssFiles).on('all', gulp.series(styles, reload));
-    gulp.watch(jsFiles ).on('all', gulp.series(scripts, reload));
+    gulp.watch(jsFiles).on('all', gulp.series(scripts, reload));
     gulp.watch(imgFiles).on('all', gulp.series(images, reload));
     gulp.watch(htmlFiles).on("change", reload);
 }

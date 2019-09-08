@@ -4,18 +4,25 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "gulp dev",
+    "dev": "gulp dev --production"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@babel/core": "^7.6.0",
+    "@babel/preset-env": "^7.6.0",
+    "@babel/register": "^7.6.0",
     "autoprefixer": "^9.6.1",
+    "babel-loader": "^8.0.6",
     "browser-sync": "^2.26.7",
     "del": "^5.1.0",
     "gulp": "^4.0.2",
+    "gulp-babel": "^8.0.0",
     "gulp-base64-inline": "^1.0.4",
     "gulp-clean-css": "^4.2.0",
     "gulp-concat": "^2.6.1",
+    "gulp-if": "^3.0.0",
     "gulp-imagemin": "^6.1.0",
     "gulp-load-plugins": "^2.0.1",
     "gulp-postcss": "^8.0.0",
@@ -25,7 +32,11 @@
     "gulp-uglify": "^3.0.2",
     "js-yaml": "^3.13.1",
     "node-sass": "^4.12.0",
-    "postcss-preset-env": "^6.7.0"
+    "postcss-preset-env": "^6.7.0",
+    "vinyl-named": "^1.1.0",
+    "webpack": "^4.39.3",
+    "webpack-stream": "^5.2.1",
+    "yargs": "^14.0.0"
   },
   "dependencies": {}
 }
