@@ -11,6 +11,8 @@ const yargs = require('yargs')
 const named = require('vinyl-named')
 const webpackStream = require('webpack-stream');
 const webpack = require('webpack')
+const imageminJpegRecompress = require('imagemin-jpeg-recompress')
+const pngquant = require('imagemin-pngquant')
 
 //релоадер browserSync
 const reload = browserSync.reload;
@@ -107,16 +109,25 @@ function scripts() {
 //обработка изображения
 function images() {
     return gulp.src(imgFiles)
-        .pipe($.imagemin({
-            verbose: true,
-            interlaced: true,
-            progressive: true,
-            optimizationLevel: 5,
-            svgoPlugins: [
-                {
-                    removeViewBox: true
-                }
-            ]
+        .pipe($.imagemin([
+            $.imagemin.gifsicle({interlaced: true}),
+            $.imagemin.jpegtran({progressive: true}),
+            imageminJpegRecompress({
+                loops: 5,
+                min: 70,
+                max: 75,
+                quality: 'medium'
+            }),
+            $.imagemin.optipng({optimizationLevel: 5}),
+            $.imagemin.svgo({
+                plugins: [
+                    {removeViewBox: true},
+                    {cleanupIDs: false}
+                ]
+            }),
+            pngquant({quality: '65-70', speed: 5})
+        ],{
+            verbose: true
         }))
         .pipe(gulp.dest(PATHS.build + 'img'))
         .pipe(browserSync.stream())
