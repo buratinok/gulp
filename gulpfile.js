@@ -5,25 +5,27 @@ const plugins = require('gulp-load-plugins');
 const autoprefixer = require('autoprefixer');
 const postcssPresetEnv = require('postcss-preset-env');
 const del = require('del');
+const fs = require('fs');
+const yaml = require('js-yaml');
 
 
 const reload = browserSync.reload;
 const $ = plugins();
 $.sass.compiler = require('node-sass');
+const {COMPATIBILITY, PORT, PATHS} = loadConfig();
+
+function loadConfig(){
+    let ymlFile = fs.readFileSync('config.yml','utf8');
+    return yaml.load(ymlFile);
+}
 
 const htmlFiles = [
     '*.html'
 ]
 
-const cssFiles = [
-    './src/scss/**/*.scss'
-]
-const jsFiles = [
-    './src/js/*.js'
-]
-const imgFiles = [
-    './src/img/**/*'
-]
+const cssFiles = PATHS.styles;
+const jsFiles = PATHS.entrance;
+const imgFiles = PATHS.img;
 
 
 //стили CSS
@@ -35,7 +37,7 @@ function styles() {
         .pipe($.postcss([
             postcssPresetEnv({
                 stage: 2,
-                browsers: ['last 2 versions', 'ie >= 9', 'android >= 4.4', 'ios >= 7'],
+                browsers: COMPATIBILITY,
                 autoprefixer: {grid: true, cascade: false},
                 features: {'nesting-rules': true}
             })
@@ -44,7 +46,7 @@ function styles() {
             level: 2
         }))
         .pipe($.rename({suffix: '.min'}))
-        .pipe(gulp.dest('./build/css'))
+        .pipe(gulp.dest(PATHS.build + 'css'))
         .pipe(browserSync.stream())
 }
 
@@ -52,14 +54,14 @@ function styles() {
 function scripts() {
     return gulp.src(jsFiles)
         //merge
-        .pipe($.concat('script.js'))
+        .pipe($.concat('app.js'))
         //минификацыя
         .pipe($.uglify({
             //манипулирование именами переменных
             toplevel: true
         }))
         .pipe($.rename({suffix: '.min'}))
-        .pipe(gulp.dest('./build/js'))
+        .pipe(gulp.dest(PATHS.build + 'js'))
         .pipe(browserSync.stream())
 }
 
@@ -77,7 +79,7 @@ function images() {
                 }
             ]
         }))
-        .pipe(gulp.dest('./build/img'))
+        .pipe(gulp.dest(PATHS.build + 'img'))
         .pipe(browserSync.stream())
 }
 
@@ -89,8 +91,8 @@ function clean() {
 function server(done) {
     browserSync.init({
         server: {
-            baseDir: "./"
-        }
+            baseDir: PATHS.dist,
+        }, port: PORT
     },done);
 }
 
