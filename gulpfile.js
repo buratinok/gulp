@@ -7,12 +7,13 @@ const postcssPresetEnv = require('postcss-preset-env');
 const del = require('del');
 const fs = require('fs');
 const yaml = require('js-yaml');
-const yargs = require('yargs')
-const named = require('vinyl-named')
+const yargs = require('yargs');
+const named = require('vinyl-named');
 const webpackStream = require('webpack-stream');
-const webpack = require('webpack')
-const imageminJpegRecompress = require('imagemin-jpeg-recompress')
-const pngquant = require('imagemin-pngquant')
+const webpack = require('webpack');
+const imageminJpegRecompress = require('imagemin-jpeg-recompress');
+const pngquant = require('imagemin-pngquant');
+const panini = require( 'panini');
 
 //релоадер browserSync
 const reload = browserSync.reload;
@@ -35,17 +36,31 @@ function loadConfig() {
 const PRODUCTION = !!(yargs.argv.production)
 
 //подключение рабочих файлов
-const htmlFiles = [
-    '*.html'
-]
+const htmlFiles = PATHS.html;
 const cssFiles = PATHS.styles;
 const jsFiles = PATHS.entrance;
 const imgFiles = PATHS.img;
 
+//страницы HTML
+async function pages(){
+    return gulp.src('src/pages/**/*.{html,hbs,handlebars}')
+        .pipe(panini({
+            root: 'src/pages/',
+            layouts: 'src/layouts/',
+            partials: 'src/partials/',
+            data: 'src/data/',
+            helpers: 'src/helpers/'
+        }))
+        .pipe(gulp.dest(PATHS.dist))
+}
+function resetPages(done){
+    panini.refresh();
+    done();
+}
 
 //стили CSS
-function styles() {
-    return gulp.src(cssFiles)
+async function styles() {
+     const css = await gulp.src(cssFiles)
         .pipe($.sourcemaps.init())
         .pipe($.sass()
             .on('error', $.sass.logError))
@@ -65,6 +80,7 @@ function styles() {
         //.pipe($.if(PRODUCTION, $.rename({suffix: '.min'})))
         .pipe(gulp.dest(PATHS.build + 'css'))
         .pipe(browserSync.stream())
+    return css
 }
 
 //конфигурацыя webpack
@@ -90,8 +106,8 @@ let webpackConfig = {
 }
 
 //скрипты JS
-function scripts() {
-    return gulp.src(jsFiles)
+async function scripts() {
+    const js = await gulp.src(jsFiles)
         .pipe(named())
         .pipe($.sourcemaps.init())
         .pipe(webpackStream(webpackConfig, webpack))
@@ -104,12 +120,13 @@ function scripts() {
         //.pipe($.if(PRODUCTION, $.rename({suffix: '.min'})))
         .pipe(gulp.dest(PATHS.build + 'js'))
         .pipe(browserSync.stream())
+    return js
 }
 
 //обработка изображения
-function images() {
-    return gulp.src(imgFiles)
-        .pipe($.imagemin([
+async function images() {
+    const imgmin = await gulp.src(imgFiles)
+        .pipe($.if(PRODUCTION, $.imagemin([
             $.imagemin.gifsicle({interlaced: true}),
             $.imagemin.jpegtran({progressive: true}),
             imageminJpegRecompress({
@@ -122,39 +139,45 @@ function images() {
             $.imagemin.svgo({
                 plugins: [
                     {removeViewBox: true},
-                    {cleanupIDs: false}
+                    {cleanupIDs: false},
+                    pngquant({quality: '65-70', speed: 5})
                 ]
             }),
-            pngquant({quality: '65-70', speed: 5})
         ],{
             verbose: true
         }))
+        )
         .pipe(gulp.dest(PATHS.build + 'img'))
         .pipe(browserSync.stream())
+    return imgmin
 }
 
 //очистка
-function clean() {
-    return del(['build/*'])
+async function clean() {
+    const cleanimg = await del(['build/*'])
+    return cleanimg
 }
 
 //запуск сервера
-function server(done) {
-    browserSync.init({
-        server: {
-            baseDir: PATHS.dist,
-        }, port: PORT
+async function server(done) {
+    const browser = await browserSync.init({
+        server: PATHS.dist,
+        port: PORT
     }, done);
+    return browser
 }
 
 //наблюдение
 function watch() {
+    gulp.watch('src/pages/**/*.html').on('all', gulp.series(pages, reload));
+    gulp.watch(htmlFiles).on('all', gulp.series(resetPages, pages, reload));
     gulp.watch(cssFiles).on('all', gulp.series(styles, reload));
     gulp.watch(jsFiles).on('all', gulp.series(scripts, reload));
     gulp.watch(imgFiles).on('all', gulp.series(images, reload));
-    gulp.watch(htmlFiles).on("change", reload);
+    //gulp.watch('build/*.html').on("change", reload);
 }
-
+//таска html
+gulp.task('pages', pages);
 
 //таска css
 gulp.task('styles', styles);
@@ -175,6 +198,6 @@ gulp.task('server', server);
 gulp.task('watch', watch);
 
 //таск build
-gulp.task('build', gulp.series(clean, gulp.parallel(styles, scripts, images)));
+gulp.task('build', gulp.series(clean, gulp.parallel(pages, scripts, images), styles));
 gulp.task('dev', gulp.series('build', 'server', 'watch'))
 

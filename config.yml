@@ -11,10 +11,15 @@ COMPATIBILITY:
 #конфигурацыя обращения к файлам
 PATHS:
   #рабочий каталог
-  dist: './'
+  dist: './build'
 
   #исходный каьалог
   build: './build/assets/'
+
+  #каталог страниц
+  html:
+    - 'src/{layouts,partials}/**/*.html'
+    - 'src/data/**/*.{js,json,yml}'
 
   #каталог стилей
   styles:
