@@ -14,6 +14,7 @@ const webpack = require('webpack');
 const imageminJpegRecompress = require('imagemin-jpeg-recompress');
 const pngquant = require('imagemin-pngquant');
 const panini = require( 'panini');
+const Fiber = require('fibers')
 
 //релоадер browserSync
 const reload = browserSync.reload;
@@ -23,6 +24,7 @@ const $ = plugins();
 
 //компилятор node-sass
 $.sass.compiler = require('node-sass');
+
 
 //подключение чтение config.yml
 const {COMPATIBILITY, PORT, PATHS} = loadConfig();
@@ -37,7 +39,7 @@ const PRODUCTION = !!(yargs.argv.production)
 
 //подключение рабочих файлов
 const htmlFiles = PATHS.html;
-const cssFiles = PATHS.styles;
+const scssFiles = PATHS.styles;
 const jsFiles = PATHS.entrance;
 const imgFiles = PATHS.img;
 
@@ -60,12 +62,20 @@ function resetPages(done){
 
 //стили CSS
 async function styles() {
-     const css = await gulp.src(cssFiles)
-        .pipe($.sourcemaps.init())
-        .pipe($.sass()
+    const css = await gulp.src(scssFiles)
+    // .pipe($.sourcemaps.init())
+        .pipe($.sass.sync({
+            data: ({indentedSyntax: true}),
+            outputStyle: 'compressed',
+            sourceMap: true,
+            sourceMapContents: false,
+            embedSourceMap: true,
+            sourceComments: true, //коменты
+            fiber: Fiber
+        })
             .on('error', $.sass.logError))
         .pipe($.base64Inline())
-        .pipe($.concat('style.css'))
+        .pipe($.concat('app.css'))
         .pipe($.postcss([
             postcssPresetEnv({
                 stage: 2,
@@ -76,7 +86,7 @@ async function styles() {
         ]))
 
         .pipe($.if(PRODUCTION, $.cleanCss({ level: 2})))
-        .pipe($.if(!PRODUCTION, $.sourcemaps.write()))
+        //.pipe($.if(!PRODUCTION, $.sourcemaps.write()))
         //.pipe($.if(PRODUCTION, $.rename({suffix: '.min'})))
         .pipe(gulp.dest(PATHS.build + 'css'))
         .pipe(browserSync.stream())
@@ -171,7 +181,7 @@ async function server(done) {
 function watch() {
     gulp.watch('src/pages/**/*.html').on('all', gulp.series(pages, reload));
     gulp.watch(htmlFiles).on('all', gulp.series(resetPages, pages, reload));
-    gulp.watch(cssFiles).on('all', gulp.series(styles, reload));
+    gulp.watch(scssFiles).on('all', gulp.series(styles, reload));
     gulp.watch(jsFiles).on('all', gulp.series(scripts, reload));
     gulp.watch(imgFiles).on('all', gulp.series(images, reload));
     //gulp.watch('build/*.html').on("change", reload);

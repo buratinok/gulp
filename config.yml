@@ -31,4 +31,4 @@ PATHS:
 
   #точка входа js
   entrance:
-    - './src/assets/js/*.js'
+    - './src/assets/js/app.js'
