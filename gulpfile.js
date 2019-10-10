@@ -14,7 +14,8 @@ const webpack = require('webpack');
 const imageminJpegRecompress = require('imagemin-jpeg-recompress');
 const pngquant = require('imagemin-pngquant');
 const panini = require( 'panini');
-const Fiber = require('fibers')
+const Fiber = require('fibers');
+const tildeImporter = require('node-sass-tilde-importer');
 
 //релоадер browserSync
 const reload = browserSync.reload;
@@ -35,7 +36,7 @@ function loadConfig() {
 }
 
 //проверка флага --production
-const PRODUCTION = !!(yargs.argv.production)
+const PRODUCTION = !!(yargs.argv.production);
 
 //подключение рабочих файлов
 const htmlFiles = PATHS.html;
@@ -64,15 +65,24 @@ function resetPages(done){
 async function styles() {
     const css = await gulp.src(scssFiles)
     // .pipe($.sourcemaps.init())
-        .pipe($.sass.sync({
+        .pipe($.if(PRODUCTION, $.sass.sync({
             data: ({indentedSyntax: true}),
             outputStyle: 'compressed',
+            importer: tildeImporter,
+            sourceComments: true, //коменты
+            fiber: Fiber
+        }))
+            .on('error', $.sass.logError))
+        .pipe($.if(!PRODUCTION, $.sass.sync({
+            data: ({indentedSyntax: true}),
+            outputStyle: 'expanded',
+            importer: tildeImporter,
             sourceMap: true,
             sourceMapContents: false,
             embedSourceMap: true,
             sourceComments: true, //коменты
             fiber: Fiber
-        })
+        }))
             .on('error', $.sass.logError))
         .pipe($.base64Inline())
         .pipe($.concat('app.css'))
