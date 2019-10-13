@@ -1,7 +1,10 @@
-
-@import "app";
 //Глобальный размер шрифта
 $global-font-size: 100% !default;
+
+//Удаляем приставки  px, rem, em,
+@function strip-unit($num) {
+  @return $num / ($num * 0 + 1);
+}
 
 //перевод em в rem
 @function to-rem($value, $base: null) {

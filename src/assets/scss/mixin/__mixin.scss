@@ -1,0 +1,26 @@
+
+//ф-к для микса fonts
+
+@function letter-spacing($size, $va:$va){
+  @return ($size*$va)/1000;
+}
+
+@function line-height($size, $line_height){
+  @return $line_height/$size;
+}
+
+//формирование шрифта
+@mixin fonts($size:$size, $line_height:$line_height, $family:$family) {
+
+  font: {
+    family: $family;
+    size: rem-calc($size);
+  }
+  line-height: line-height($size, $line_height);
+  letter-spacing: letter-spacing($size);
+}
+
+@mixin line($line_height:$line_height, $size:$size ){
+  line-height: line-height($size, $line_height);
+  letter-spacing: letter-spacing($size);
+}
