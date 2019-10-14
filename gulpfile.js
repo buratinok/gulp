@@ -95,7 +95,25 @@ async function styles() {
             })
         ]))
 
-        .pipe($.if(PRODUCTION, $.cleanCss({ level: 2})))
+        .pipe($.if(!PRODUCTION, $.cleanCss({
+            format:'beautify',
+            level: {
+                1: {
+                    all: true
+                }
+            }
+        })))
+        .pipe($.if(PRODUCTION, $.cleanCss({
+            compatibility: '*',
+            level: {
+                1: {
+                    all: true
+                },
+                2: {
+                    all: true
+                }
+            }
+        })))
         //.pipe($.if(!PRODUCTION, $.sourcemaps.write()))
         //.pipe($.if(PRODUCTION, $.rename({suffix: '.min'})))
         .pipe(gulp.dest(PATHS.build + 'css'))
