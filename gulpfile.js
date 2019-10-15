@@ -13,7 +13,7 @@ const webpackStream = require('webpack-stream');
 const webpack = require('webpack');
 const imageminJpegRecompress = require('imagemin-jpeg-recompress');
 const pngquant = require('imagemin-pngquant');
-const panini = require( 'panini');
+const panini = require('panini');
 const Fiber = require('fibers');
 const tildeImporter = require('node-sass-tilde-importer');
 
@@ -45,7 +45,7 @@ const jsFiles = PATHS.entrance;
 const imgFiles = PATHS.img;
 
 //страницы HTML
-async function pages(){
+async function pages() {
     return gulp.src('src/pages/**/*.{html,hbs,handlebars}')
         .pipe(panini({
             root: 'src/pages/',
@@ -56,7 +56,8 @@ async function pages(){
         }))
         .pipe(gulp.dest(PATHS.dist))
 }
-function resetPages(done){
+
+function resetPages(done) {
     panini.refresh();
     done();
 }
@@ -96,10 +97,11 @@ async function styles() {
         ]))
 
         .pipe($.if(!PRODUCTION, $.cleanCss({
-            format:'beautify',
+            format: 'beautify',
             level: {
                 1: {
-                    all: true
+                    all: true,
+                    roundingPrecision: 'all=3,px=0'
                 }
             }
         })))
@@ -107,7 +109,8 @@ async function styles() {
             compatibility: '*',
             level: {
                 1: {
-                    all: true
+                    all: false,
+                    roundingPrecision: 'all=3,px=0'
                 },
                 2: {
                     all: true
@@ -150,9 +153,9 @@ async function scripts() {
         .pipe($.sourcemaps.init())
         .pipe(webpackStream(webpackConfig, webpack))
         .pipe($.if(PRODUCTION, $.uglify({toplevel: true})
-                .on('error', e => {
-                    console.log();
-                })
+            .on('error', e => {
+                console.log();
+            })
         ))
         .pipe($.if(!PRODUCTION, $.sourcemaps.write()))
         //.pipe($.if(PRODUCTION, $.rename({suffix: '.min'})))
@@ -165,25 +168,25 @@ async function scripts() {
 async function images() {
     const imgmin = await gulp.src(imgFiles)
         .pipe($.if(PRODUCTION, $.imagemin([
-            $.imagemin.gifsicle({interlaced: true}),
-            $.imagemin.jpegtran({progressive: true}),
-            imageminJpegRecompress({
-                loops: 5,
-                min: 70,
-                max: 75,
-                quality: 'medium'
-            }),
-            $.imagemin.optipng({optimizationLevel: 5}),
-            $.imagemin.svgo({
-                plugins: [
-                    {removeViewBox: true},
-                    {cleanupIDs: false},
-                    pngquant({quality: '65-70', speed: 5})
-                ]
-            }),
-        ],{
-            verbose: true
-        }))
+                $.imagemin.gifsicle({interlaced: true}),
+                $.imagemin.jpegtran({progressive: true}),
+                imageminJpegRecompress({
+                    loops: 5,
+                    min: 70,
+                    max: 75,
+                    quality: 'medium'
+                }),
+                $.imagemin.optipng({optimizationLevel: 5}),
+                $.imagemin.svgo({
+                    plugins: [
+                        {removeViewBox: true},
+                        {cleanupIDs: false},
+                        pngquant({quality: '65-70', speed: 5})
+                    ]
+                }),
+            ], {
+                verbose: true
+            }))
         )
         .pipe(gulp.dest(PATHS.build + 'img'))
         .pipe(browserSync.stream())
@@ -214,6 +217,7 @@ function watch() {
     gulp.watch(imgFiles).on('all', gulp.series(images, reload));
     //gulp.watch('build/*.html').on("change", reload);
 }
+
 //таска html
 gulp.task('pages', pages);
 
