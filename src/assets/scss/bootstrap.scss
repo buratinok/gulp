@@ -1,11 +1,11 @@
-// app.scss
+// bootstrap.scss
 // Option B: Include parts of Bootstrap
 
 @charset "utf-8";
 
-@import "settings";
-@import "~bootstrap/scss/bootstrap";
-@import "~bourbon/core/bourbon.scss";
-
 @import "functions/_functions";
 @import "mixin/_mixin";
+@import "settings";
+
+@import "~bootstrap/scss/bootstrap";
+
