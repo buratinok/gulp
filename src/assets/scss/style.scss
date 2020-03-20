@@ -12,10 +12,11 @@
 @import "~hover.css/scss/options";
 @import "~hover.css/scss/mixins";
 @import "~hover.css/scss/hacks";
+@import "~bourbon/core/bourbon.scss";
 @import "functions/_functions";
 @import "mixin/_mixin";
 @import "global";
-@import "~bourbon/core/bourbon.scss";
+
 
 @import "functions/_functions";
 @import "mixin/_mixin";
