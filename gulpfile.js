@@ -43,6 +43,7 @@ const htmlFiles = PATHS.html;
 const scssFiles = PATHS.styles;
 const jsFiles = PATHS.entrance;
 const imgFiles = PATHS.img;
+const fontsFiles = PATHS.fonts;
 
 //страницы HTML
 async function pages() {
@@ -86,7 +87,7 @@ async function styles() {
         }))
             .on('error', $.sass.logError))
         .pipe($.base64Inline())
-        .pipe($.concat('app.css'))
+        /*  .pipe($.concat('app.css'))*/
         .pipe($.postcss([
             postcssPresetEnv({
                 stage: 2,
@@ -101,7 +102,7 @@ async function styles() {
             level: {
                 1: {
                     all: true,
-                    roundingPrecision: 'all=3,px=0'
+                    roundingPrecision: 'all=3,px=2'
                 }
             }
         })))
@@ -110,11 +111,11 @@ async function styles() {
             level: {
                 1: {
                     all: false,
-                    roundingPrecision: 'all=3,px=0'
+                    roundingPrecision: 'all=3,px=2'
                 },
-                2: {
+               /* 2: {
                     all: true
-                }
+                }*/
             }
         })))
         //.pipe($.if(!PRODUCTION, $.sourcemaps.write()))
@@ -157,7 +158,11 @@ async function scripts() {
                 console.log();
             })
         ))
-        .pipe($.if(!PRODUCTION, $.sourcemaps.write()))
+        .pipe($.if(!PRODUCTION, $.sourcemaps.write()
+            .on('error', e => {
+                console.log();
+            })
+        ))
         //.pipe($.if(PRODUCTION, $.rename({suffix: '.min'})))
         .pipe(gulp.dest(PATHS.build + 'js'))
         .pipe(browserSync.stream())
@@ -193,6 +198,14 @@ async function images() {
     return imgmin
 }
 
+//обработка шрифтов
+async function fonts() {
+    const fonts = await gulp.src(fontsFiles)
+        .pipe(gulp.dest(PATHS.build + 'fonts'))
+        .pipe(browserSync.stream())
+    return fonts
+}
+
 //очистка
 async function clean() {
     const cleanimg = await del(['build/*'])
@@ -215,6 +228,7 @@ function watch() {
     gulp.watch(scssFiles).on('all', gulp.series(styles, reload));
     gulp.watch(jsFiles).on('all', gulp.series(scripts, reload));
     gulp.watch(imgFiles).on('all', gulp.series(images, reload));
+    gulp.watch(fontsFiles).on('all', gulp.series(fonts, reload));
     //gulp.watch('build/*.html').on("change", reload);
 }
 
@@ -230,6 +244,9 @@ gulp.task('scripts', scripts);
 //таска img
 gulp.task('images', images);
 
+//таска fonts
+gulp.task('fonts', fonts);
+
 //таска clean
 gulp.task('clean', clean);
 
@@ -240,6 +257,6 @@ gulp.task('server', server);
 gulp.task('watch', watch);
 
 //таск build
-gulp.task('build', gulp.series(clean, gulp.parallel(pages, scripts, images), styles));
-gulp.task('dev', gulp.series('build', 'server', 'watch'))
+gulp.task('build', gulp.series(clean, gulp.parallel(pages, scripts), images, styles, fonts));
+gulp.task('dev', gulp.series('build', 'server', 'watch'));
 

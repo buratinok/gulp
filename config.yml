@@ -29,6 +29,10 @@ PATHS:
   img:
     - './src/assets/img/**/*'
 
+  #каталог шрифтов
+  fonts:
+    - './src/assets/fonts/**/*'
+
   #точка входа js
   entrance:
     - './src/assets/js/app.js'
