@@ -155,12 +155,12 @@ async function scripts() {
         .pipe(webpackStream(webpackConfig, webpack))
         .pipe($.if(PRODUCTION, $.uglify({toplevel: true})
             .on('error', e => {
-                console.log();
+                console.log(e);
             })
         ))
         .pipe($.if(!PRODUCTION, $.sourcemaps.write()
             .on('error', e => {
-                console.log();
+                console.log(e);
             })
         ))
         //.pipe($.if(PRODUCTION, $.rename({suffix: '.min'})))
